@@ -11,7 +11,7 @@ the [Neo4j](http://www.neo4j.org) graph database via its REST API.
 
 [Go 1.1](http://golang.org/doc/go1.1) or later is required.
 
-Neo4j Milestone 2.0.0-RC1 or greater is required to run the full test suite.
+Tested against Neo4j 2.1.2.  
 
 
 # Documentation
@@ -75,6 +75,9 @@ Contributions, in the form of Pull Requests or Issues, are gladly accepted.
 Before submitting a Pull Request, please ensure your code passes all tests, and
 that your changes do not decrease test coverage.  I.e. if you add new features,
 also add corresponding new tests.
+
+For fastest response when submitting an Issue, please create a failing test
+case to demonstrate the problem.
 
 
 # Support

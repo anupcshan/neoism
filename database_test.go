@@ -29,6 +29,7 @@ import (
 	"github.com/bmizerany/assert"
 	"github.com/jmcvetta/randutil"
 	"log"
+	"os"
 	"testing"
 )
 
@@ -68,6 +69,7 @@ func rndStr(t *testing.T) string {
 
 func TestConnect(t *testing.T) {
 	db := connectTest(t)
+	logPretty(db)
 	assert.Equal(t, "http://localhost:7474/db/data", db.Url)
 }
 
@@ -96,4 +98,65 @@ func TestConnectInvalidUrl(t *testing.T) {
 	//
 	_, err = Connect("http://localhost:7474")
 	assert.Equal(t, InvalidDatabase, err)
+}
+
+func TestPropertyKeys(t *testing.T) {
+	db := connectTest(t)
+	defer cleanup(t, db)
+
+	// Prepare query for testing data creation
+	var queryString string
+	createdPropertyKeys := make([]string, 0)
+	for i := 0; i < 10; i++ {
+		propertyKeyNodeA := rndStr(t)
+		propertyKeyRel := rndStr(t)
+		propertyKeyNodeB := rndStr(t)
+		createdPropertyKeys = append(createdPropertyKeys, propertyKeyNodeA)
+		createdPropertyKeys = append(createdPropertyKeys, propertyKeyRel)
+		createdPropertyKeys = append(createdPropertyKeys, propertyKeyNodeB)
+
+		queryString += `
+			CREATE ({` + propertyKeyNodeA + `:""})-[:LINK {` + propertyKeyRel + `:""}]->({` + propertyKeyNodeB + `:"Bob"})
+		`
+	}
+	cq := CypherQuery{
+		Statement: queryString,
+	}
+
+	// Execute the test data creation query
+	err := db.Cypher(&cq)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Get all live property keys on nodes and relationships
+	livePropertyKeys, err := PropertyKeys(db)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Check if the created property keys are among the extracted
+	for _, createdPropertyKey := range createdPropertyKeys {
+		keyExists := false
+		for _, livePropertyKey := range livePropertyKeys {
+			if createdPropertyKey == livePropertyKey {
+				keyExists = true
+				break
+			}
+		}
+		if !keyExists {
+			t.Error("Could not find the expected property key: " + createdPropertyKey)
+		}
+	}
+}
+
+func TestConnectUrl(t *testing.T) {
+	if url := os.Getenv("NEO4J_URL"); url != "" {
+		_, err := Connect(url)
+		if err != nil {
+			t.Fatal("Cannot connect to %q", url)
+		}
+	} else {
+		t.Skip("Skipping test, environment variable $NEO4J_URL is not defined.")
+	}
 }

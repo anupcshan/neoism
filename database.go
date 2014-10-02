@@ -58,5 +58,24 @@ func Connect(uri string) (*Database, error) {
 	return db, nil
 }
 
+// PropertyKeys lists all property keys ever used in the database. This
+// includes and property keys you have used, but deleted.  There is
+// currently no way to tell which ones are in use and which ones are not,
+// short of walking the entire set of properties in the database.
+func PropertyKeys(db *Database) ([]string, error) {
+	propertyKeys := []string{}
+	ne := NeoError{}
+
+	uri := db.Url + "/" + "propertykeys"
+	resp, err := db.Session.Get(uri, nil, &propertyKeys, &ne)
+	if err != nil {
+		return propertyKeys, err
+	}
+	if resp.Status() != 200 {
+		return propertyKeys, ne
+	}
+	return propertyKeys, err
+}
+
 // A Props is a set of key/value properties.
 type Props map[string]interface{}
